@@ -486,24 +486,23 @@ async function fetchWithTimeout(url, ms=15000) {
 }
 
 async function fetchFeed(feed) {
-  // Vercel function fetches Google News RSS server-side (Google doesn't block Vercel)
+  // Vercel function now returns clean JSON — no XML parsing in browser at all
   const proxyUrl = `/api/rss?url=${encodeURIComponent(feed.url)}`;
   try {
     const res = await fetchWithTimeout(proxyUrl, 15000);
     if (res.ok) {
-      const txt = await res.text();
-      if (txt && txt.length > 200) {
-        const items = parseRSS(txt, feed.name);
-        if (items.length) { dbgLog(`✅ ${feed.name}: ${items.length} articles`); return items; }
-        dbgLog(`⚠️ ${feed.name}: parsed 0 items`);
+      const data = await res.json();
+      if (data.status === 'ok' && data.items?.length) {
+        const parsed = parseJSON(data.items, feed.name);
+        if (parsed.length) { dbgLog(`✅ ${feed.name}: ${parsed.length} articles`); return parsed; }
+        dbgLog(`⚠️ ${feed.name}: 0 after filter (${data.items.length} raw)`);
       } else {
-        dbgLog(`⚠️ ${feed.name}: empty (${txt?.length} bytes)`);
+        dbgLog(`⚠️ ${feed.name}: ${data.error || '0 items'}`);
       }
     } else {
       dbgLog(`⚠️ ${feed.name}: HTTP ${res.status}`);
     }
   } catch(e) { dbgLog(`❌ ${feed.name}: ${e.message.slice(0,40)}`); }
-
   throw new Error('Failed: ' + feed.name);
 }
 

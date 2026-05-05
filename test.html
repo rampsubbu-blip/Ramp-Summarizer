@@ -107,31 +107,19 @@ async function runAll() {
   try {
     const res = await fetch(feedProxy);
     if (res.ok) {
-      const txt = await res.text();
-      log('s2', `✅ Got ${txt.length} bytes`, 'ok');
-      log('s2', `Starts with: ${txt.slice(0,80)}`, 'dim');
+      const data = await res.json();
+      log('s2', `✅ Got ${data.items?.length ?? 0} items, status: ${data.status}`, 'ok');
 
-      // ── STEP 3: Parse ──────────────────────────────────────
-      log('s3', 'Parsing XML...', 'dim');
-      try {
-        const cleaned = txt.replace(/&(?![a-zA-Z#][a-zA-Z0-9#]*;)/g, '&amp;');
-        const doc = new DOMParser().parseFromString(cleaned, 'text/xml');
-        const parseErr = doc.querySelector('parsererror');
-        if (parseErr) {
-          log('s3', `❌ XML parse error: ${parseErr.textContent.slice(0,80)}`, 'err');
-        } else {
-          const items = doc.querySelectorAll('item');
-          log('s3', `✅ Found ${items.length} <item> elements`, 'ok');
-          if (items.length > 0) {
-            const first = items[0];
-            const title = first.querySelector('title')?.textContent || '(no title)';
-            const link  = first.querySelector('link')?.textContent || '(no link)';
-            log('s3', `First article: ${title.slice(0,80)}`, 'ok');
-            log('s3', `Link: ${link.slice(0,80)}`, 'dim');
-          }
-        }
-      } catch(e) {
-        log('s3', `❌ Parse threw: ${e.message}`, 'err');
+      // ── STEP 3: Check parsed items ────────────────────────
+      log('s3', 'Checking parsed JSON items...', 'dim');
+      if (data.items?.length) {
+        const first = data.items[0];
+        log('s3', `✅ ${data.items.length} items parsed server-side`, 'ok');
+        log('s3', `First title: ${(first.title||'').slice(0,80)}`, 'ok');
+        log('s3', `First link: ${(first.link||'').slice(0,80)}`, 'dim');
+        log('s3', `PubDate: ${first.pubDate||'(none)'}`, 'dim');
+      } else {
+        log('s3', `❌ No items: ${data.error||'unknown'}`, 'err');
       }
     } else {
       log('s2', `❌ HTTP ${res.status}`, 'err');
@@ -151,10 +139,9 @@ async function runAll() {
     try {
       const res = await fetch(`/api/rss?url=${encodeURIComponent(feed.url)}`);
       if (res.ok) {
-        const txt = await res.text();
-        const cleaned = txt.replace(/&(?![a-zA-Z#][a-zA-Z0-9#]*;)/g, '&amp;');
-        const items = new DOMParser().parseFromString(cleaned,'text/xml').querySelectorAll('item');
-        log('s4', `✅ ${feed.name}: ${items.length} items`, 'ok');
+        const data = await res.json();
+        const count = data.items?.length ?? 0;
+        log('s4', `✅ ${feed.name}: ${count} items`, count > 0 ? 'ok' : 'warn');
         ok++;
       } else {
         log('s4', `❌ ${feed.name}: HTTP ${res.status}`, 'err');
