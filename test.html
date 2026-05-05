@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MC Proxy Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: monospace; background: #08080f; color: #e8e8f4; padding: 16px; font-size: 13px; }
+    h2 { color: #f0a500; margin-bottom: 14px; font-size: 15px; }
+    .btn { background: #f0a500; color: #000; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; margin-bottom: 14px; font-family: monospace; }
+    .btn:active { opacity: 0.8; }
+    .log { background: #0f0f1a; border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 12px; line-height: 1.8; min-height: 60px; white-space: pre-wrap; word-break: break-all; }
+    .ok  { color: #00d68f; }
+    .err { color: #ff4d6a; }
+    .warn{ color: #f0a500; }
+    .dim { color: #8888aa; }
+    hr { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 14px 0; }
+    .step { margin-bottom: 14px; }
+    .step-title { color: #f0a500; font-weight: 700; margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+
+<h2>🔧 MC Proxy Test</h2>
+<p style="color:#8888aa;margin-bottom:14px;font-size:11px;">Tests each step: Vercel proxy → Google News RSS → Article parsing</p>
+
+<button class="btn" onclick="runAll()">▶ Run All Tests</button>
+
+<div class="step">
+  <div class="step-title">Step 1 — Vercel Proxy reachable?</div>
+  <div class="log" id="s1">Not run yet</div>
+</div>
+
+<hr>
+
+<div class="step">
+  <div class="step-title">Step 2 — Google News RSS via proxy</div>
+  <div class="log" id="s2">Not run yet</div>
+</div>
+
+<hr>
+
+<div class="step">
+  <div class="step-title">Step 3 — Parse articles from XML</div>
+  <div class="log" id="s3">Not run yet</div>
+</div>
+
+<hr>
+
+<div class="step">
+  <div class="step-title">Step 4 — All 9 feeds (summary)</div>
+  <div class="log" id="s4">Not run yet</div>
+</div>
+
+<script>
+const GN = q => `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-IN&gl=IN&ceid=IN:en`;
+
+const FEEDS = [
+  { url: GN('site:economictimes.indiatimes.com markets stocks'), name:'ET Markets' },
+  { url: GN('site:economictimes.indiatimes.com economy RBI budget'), name:'ET Economy' },
+  { url: GN('site:economictimes.indiatimes.com companies earnings'), name:'ET Companies' },
+  { url: GN('site:business-standard.com markets Sensex Nifty'), name:'BS Markets' },
+  { url: GN('site:business-standard.com economy policy'), name:'BS Economy' },
+  { url: GN('site:business-standard.com companies corporate'), name:'BS Companies' },
+  { url: GN('site:thehindubusinessline.com markets economy'), name:'BL Markets' },
+  { url: GN('site:thehindubusinessline.com companies policy'), name:'BL Economy' },
+  { url: GN('India stock market BSE NSE Sensex Nifty'), name:'General Markets' }
+];
+
+function log(id, msg, cls='') {
+  const el = document.getElementById(id);
+  if (el.textContent === 'Not run yet') el.innerHTML = '';
+  el.innerHTML += `<span class="${cls}">${msg}</span>\n`;
+}
+
+async function runAll() {
+  ['s1','s2','s3','s4'].forEach(id => {
+    document.getElementById(id).innerHTML = '';
+  });
+
+  // ── STEP 1: Proxy reachable? ──────────────────────────────
+  log('s1', 'Testing /api/rss endpoint...', 'dim');
+  const testUrl = GN('test India news');
+  const proxyUrl = `/api/rss?url=${encodeURIComponent(testUrl)}`;
+  log('s1', `Calling: ${proxyUrl.slice(0,60)}...`, 'dim');
+  try {
+    const res = await fetch(proxyUrl);
+    if (res.ok) {
+      const txt = await res.text();
+      log('s1', `✅ Proxy responded: HTTP ${res.status}, ${txt.length} bytes`, 'ok');
+      log('s1', `First 100 chars: ${txt.slice(0,100)}`, 'dim');
+    } else {
+      log('s1', `❌ Proxy HTTP ${res.status}`, 'err');
+      const body = await res.text();
+      log('s1', `Body: ${body.slice(0,100)}`, 'err');
+    }
+  } catch(e) {
+    log('s1', `❌ Fetch error: ${e.message}`, 'err');
+  }
+
+  // ── STEP 2: Google News via proxy ─────────────────────────
+  log('s2', 'Fetching ET Markets via proxy...', 'dim');
+  const feedUrl = FEEDS[0].url;
+  const feedProxy = `/api/rss?url=${encodeURIComponent(feedUrl)}`;
+  log('s2', `Feed URL: ${feedUrl.slice(0,70)}...`, 'dim');
+  try {
+    const res = await fetch(feedProxy);
+    if (res.ok) {
+      const txt = await res.text();
+      log('s2', `✅ Got ${txt.length} bytes`, 'ok');
+      log('s2', `Starts with: ${txt.slice(0,80)}`, 'dim');
+
+      // ── STEP 3: Parse ──────────────────────────────────────
+      log('s3', 'Parsing XML...', 'dim');
+      try {
+        const doc = new DOMParser().parseFromString(txt, 'text/xml');
+        const parseErr = doc.querySelector('parsererror');
+        if (parseErr) {
+          log('s3', `❌ XML parse error: ${parseErr.textContent.slice(0,80)}`, 'err');
+        } else {
+          const items = doc.querySelectorAll('item');
+          log('s3', `✅ Found ${items.length} <item> elements`, 'ok');
+          if (items.length > 0) {
+            const first = items[0];
+            const title = first.querySelector('title')?.textContent || '(no title)';
+            const link  = first.querySelector('link')?.textContent || '(no link)';
+            log('s3', `First article: ${title.slice(0,80)}`, 'ok');
+            log('s3', `Link: ${link.slice(0,80)}`, 'dim');
+          }
+        }
+      } catch(e) {
+        log('s3', `❌ Parse threw: ${e.message}`, 'err');
+      }
+    } else {
+      log('s2', `❌ HTTP ${res.status}`, 'err');
+      const body = await res.text();
+      log('s2', `Body: ${body.slice(0,100)}`, 'err');
+      log('s3', '⏭ Skipped (step 2 failed)', 'warn');
+    }
+  } catch(e) {
+    log('s2', `❌ ${e.message}`, 'err');
+    log('s3', '⏭ Skipped (step 2 failed)', 'warn');
+  }
+
+  // ── STEP 4: All feeds ─────────────────────────────────────
+  log('s4', `Testing all ${FEEDS.length} feeds...\n`, 'dim');
+  let ok = 0, fail = 0;
+  for (const feed of FEEDS) {
+    try {
+      const res = await fetch(`/api/rss?url=${encodeURIComponent(feed.url)}`);
+      if (res.ok) {
+        const txt = await res.text();
+        const items = new DOMParser().parseFromString(txt,'text/xml').querySelectorAll('item');
+        log('s4', `✅ ${feed.name}: ${items.length} items`, 'ok');
+        ok++;
+      } else {
+        log('s4', `❌ ${feed.name}: HTTP ${res.status}`, 'err');
+        fail++;
+      }
+    } catch(e) {
+      log('s4', `❌ ${feed.name}: ${e.message.slice(0,30)}`, 'err');
+      fail++;
+    }
+    await new Promise(r => setTimeout(r, 800));
+  }
+  log('s4', `\n── ${ok} passed · ${fail} failed ──`, ok === FEEDS.length ? 'ok' : 'warn');
+}
+</script>
+</body>
+</html>
