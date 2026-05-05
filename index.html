@@ -346,34 +346,27 @@
 <script>
 // ── CONSTANTS ──────────────────────────────────────────────────────
 
-const RSS2JSON = 'https://api.rss2json.com/v1/api.json?count=50&rss_url=';
-// Own Vercel proxy — same domain, no CORS issues on any device/network
-const OWN_PROXY = url => `/api/rss?url=${encodeURIComponent(url)}`;
-// External fallbacks (laptop/wifi may work even if mobile doesn't)
-const PROXIES = [
-  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-  url => `https://thingproxy.freeboard.io/fetch/${url}`
-];
+// Google News RSS — served by Google, never blocked, works on any network/device
+// No proxy needed — Google handles CORS and caching
+const GN = (q) => `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-IN&gl=IN&ceid=IN:en`;
 
 const FEEDS = {
   et: [
-    { url:'https://economictimes.indiatimes.com/markets/rss.cms', name:'ET Markets' },
-    { url:'https://economictimes.indiatimes.com/news/economy/rss.cms', name:'ET Economy' },
-    { url:'https://economictimes.indiatimes.com/markets/stocks/rss.cms', name:'ET Companies' }
+    { url: GN('site:economictimes.indiatimes.com markets stocks'), name:'ET Markets' },
+    { url: GN('site:economictimes.indiatimes.com economy RBI budget'), name:'ET Economy' },
+    { url: GN('site:economictimes.indiatimes.com companies earnings'), name:'ET Companies' }
   ],
   bs: [
-    { url:'https://www.business-standard.com/rss/latest.rss', name:'BS Latest' },
-    { url:'https://www.business-standard.com/rss/markets-106.rss', name:'BS Markets' },
-    { url:'https://www.business-standard.com/rss/economy-policy-102.rss', name:'BS Economy' },
-    { url:'https://www.business-standard.com/rss/companies-101.rss', name:'BS Companies' }
+    { url: GN('site:business-standard.com markets Sensex Nifty'), name:'BS Markets' },
+    { url: GN('site:business-standard.com economy policy'), name:'BS Economy' },
+    { url: GN('site:business-standard.com companies corporate'), name:'BS Companies' }
   ],
   bl: [
-    { url:'https://www.thehindubusinessline.com/markets/feeder/default.rss', name:'BL Markets' },
-    { url:'https://www.thehindubusinessline.com/economy/feeder/default.rss', name:'BL Economy' }
+    { url: GN('site:thehindubusinessline.com markets economy'), name:'BL Markets' },
+    { url: GN('site:thehindubusinessline.com companies policy'), name:'BL Economy' }
   ]
 };
+
 
 const SECTOR_KW = {
   Banking: ['HDFC','ICICI','SBI','Axis','Kotak','IndusInd','NPA','credit growth','lending'],
@@ -493,52 +486,24 @@ async function fetchWithTimeout(url, ms=15000) {
 }
 
 async function fetchFeed(feed) {
-  // Strategy 1: Own Netlify proxy (same domain — always works on any device)
+  // Google News RSS — direct fetch, no proxy needed (Google allows CORS)
   try {
-    const res = await fetchWithTimeout(OWN_PROXY(feed.url), 12000);
+    const res = await fetchWithTimeout(feed.url, 15000);
     if (res.ok) {
       const txt = await res.text();
       if (txt && txt.length > 200) {
         const items = parseRSS(txt, feed.name);
-        if (items.length) { dbgLog(`✅ ${feed.name}: ${items.length} via own proxy`); return items; }
+        if (items.length) { dbgLog(`✅ ${feed.name}: ${items.length} articles`); return items; }
+        dbgLog(`⚠️ ${feed.name}: parsed 0 items`);
+      } else {
+        dbgLog(`⚠️ ${feed.name}: empty response`);
       }
-      dbgLog(`⚠️ ${feed.name}: own proxy 0 items`);
     } else {
-      dbgLog(`⚠️ ${feed.name}: own proxy HTTP ${res.status}`);
+      dbgLog(`⚠️ ${feed.name}: HTTP ${res.status}`);
     }
-  } catch(e) { dbgLog(`⚠️ ${feed.name}: own proxy err - ${e.message.slice(0,30)}`); }
+  } catch(e) { dbgLog(`❌ ${feed.name}: ${e.message.slice(0,40)}`); }
 
-  // Strategy 2: rss2json
-  try {
-    const res = await fetchWithTimeout(RSS2JSON + encodeURIComponent(feed.url), 15000);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.items?.length) {
-        const parsed = parseJSON(data.items, feed.name);
-        if (parsed.length) { dbgLog(`✅ ${feed.name}: ${parsed.length} via rss2json`); return parsed; }
-      }
-      dbgLog(`⚠️ ${feed.name}: rss2json 0 items (${data.status})`);
-    }
-  } catch(e) { dbgLog(`⚠️ ${feed.name}: rss2json - ${e.message.slice(0,30)}`); }
-
-  // Strategy 3: External CORS proxies
-  for (let i = 0; i < PROXIES.length; i++) {
-    try {
-      const res = await fetchWithTimeout(PROXIES[i](feed.url), 15000);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      let txt = await res.text();
-      if (txt.startsWith('{') && txt.includes('"contents"')) {
-        txt = JSON.parse(txt).contents || '';
-      }
-      if (!txt || txt.length < 200) throw new Error('Empty');
-      const items = parseRSS(txt, feed.name);
-      if (items.length) { dbgLog(`✅ ${feed.name}: ${items.length} via proxy${i+1}`); return items; }
-      throw new Error('0 items');
-    } catch(e) { dbgLog(`⚠️ proxy${i+1} ${feed.name}: ${e.message.slice(0,20)}`); }
-  }
-
-  dbgLog(`❌ ${feed.name}: ALL failed`);
-  throw new Error('All failed: ' + feed.name);
+  throw new Error('Failed: ' + feed.name);
 }
 
 // Parse rss2json JSON response
