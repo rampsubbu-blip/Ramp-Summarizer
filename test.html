@@ -114,7 +114,8 @@ async function runAll() {
       // ── STEP 3: Parse ──────────────────────────────────────
       log('s3', 'Parsing XML...', 'dim');
       try {
-        const doc = new DOMParser().parseFromString(txt, 'text/xml');
+        const cleaned = txt.replace(/&(?![a-zA-Z#][a-zA-Z0-9#]*;)/g, '&amp;');
+        const doc = new DOMParser().parseFromString(cleaned, 'text/xml');
         const parseErr = doc.querySelector('parsererror');
         if (parseErr) {
           log('s3', `❌ XML parse error: ${parseErr.textContent.slice(0,80)}`, 'err');
@@ -151,7 +152,8 @@ async function runAll() {
       const res = await fetch(`/api/rss?url=${encodeURIComponent(feed.url)}`);
       if (res.ok) {
         const txt = await res.text();
-        const items = new DOMParser().parseFromString(txt,'text/xml').querySelectorAll('item');
+        const cleaned = txt.replace(/&(?![a-zA-Z#][a-zA-Z0-9#]*;)/g, '&amp;');
+        const items = new DOMParser().parseFromString(cleaned,'text/xml').querySelectorAll('item');
         log('s4', `✅ ${feed.name}: ${items.length} items`, 'ok');
         ok++;
       } else {

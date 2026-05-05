@@ -524,7 +524,9 @@ function parseJSON(items, src) {
 }
 
 function parseRSS(xml, src) {
-  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  // Fix unescaped & characters that break DOMParser (common in Google News RSS)
+  const cleaned = xml.replace(/&(?![a-zA-Z#][a-zA-Z0-9#]*;)/g, '&amp;');
+  const doc = new DOMParser().parseFromString(cleaned, 'text/xml');
   const items = Array.from(doc.querySelectorAll('item'));
   const cutoff = Date.now() - 7*24*60*60*1000;
   const source = src.startsWith('ET')?'et': src.startsWith('BS')?'bs':'bl';
