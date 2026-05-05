@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MC Summarizer</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#08080f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="MC News">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #08080f;
+      --surface: #0f0f1a;
+      --card: #15152a;
+      --card2: #1c1c34;
+      --accent: #f0a500;
+      --accent-glow: rgba(240,165,0,0.12);
+      --text: #e8e8f4;
+      --text2: #8888aa;
+      --border: rgba(255,255,255,0.07);
+      --green: #00d68f;
+      --red: #ff4d6a;
+      --blue: #4da6ff;
+      --orange: #ff7a35;
+      --radius: 12px;
+      --safe-b: env(safe-area-inset-bottom);
+      --safe-t: env(safe-area-inset-top);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
+
+    #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+
+    /* HEADER */
+    .hdr {
+      padding: calc(var(--safe-t) + 10px) 14px 10px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      flex-shrink: 0;
+    }
+    .hdr-logo {
+      width: 34px; height: 34px;
+      background: var(--accent); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #000;
+      flex-shrink: 0; letter-spacing: -0.5px;
+    }
+    .hdr-info { flex: 1; min-width: 0; }
+    .hdr-info h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+    .hdr-sub { font-size: 10px; color: var(--text2); font-family: 'JetBrains Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hdr-btns { display: flex; gap: 6px; }
+    .icon-btn {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: var(--card); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text2); font-size: 16px; transition: 0.15s;
+    }
+    .icon-btn:active { transform: scale(0.9); background: var(--card2); }
+
+    /* STATUS */
+    .status-bar {
+      padding: 5px 14px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      font-size: 10.5px; color: var(--text2);
+      font-family: 'JetBrains Mono', monospace;
+      flex-shrink: 0; overflow-x: auto; white-space: nowrap;
+    }
+    .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--text2); flex-shrink: 0; }
+    .sdot.ok { background: var(--green); }
+    .sdot.busy { background: var(--accent); animation: blink 0.9s infinite; }
+    .sdot.err { background: var(--red); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+    /* TABS */
+    .tabs {
+      display: flex; background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto; flex-shrink: 0;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      padding: 9px 14px; font-size: 12.5px; font-weight: 600;
+      color: var(--text2); cursor: pointer; white-space: nowrap;
+      border-bottom: 2px solid transparent; transition: 0.15s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+    .tbadge {
+      background: var(--accent-glow); color: var(--accent);
+      font-size: 9.5px; font-weight: 700;
+      padding: 1px 5px; border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* FEED */
+    .feed {
+      flex: 1; overflow-y: auto;
+      padding: 12px 14px calc(78px + var(--safe-b));
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* NOTICE */
+    .notice {
+      background: rgba(240,165,0,0.07); border: 1px solid rgba(240,165,0,0.18);
+      border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
+      font-size: 11.5px; color: var(--text2); line-height: 1.55;
+    }
+    .notice strong { color: var(--accent); }
+
+    /* SUMMARY CARD */
+    .sum-card {
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, var(--card) 0%, rgba(240,165,0,0.04) 100%);
+      border: 1px solid rgba(240,165,0,0.22);
+      border-radius: var(--radius); padding: 13px; margin-bottom: 11px;
+    }
+    .sum-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent) 0%, transparent 70%);
+    }
+    .sum-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+    .sum-lbl { font-size: 9.5px; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+    .sum-time { font-size: 9.5px; color: var(--text2); font-family: 'JetBrains Mono', monospace; margin-left: auto; }
+    .sum-txt { font-size: 13px; line-height: 1.65; color: var(--text); }
+
+    /* NEWS CARD */
+    .nc {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px; margin-bottom: 9px;
+      cursor: pointer; transition: 0.12s;
+    }
+    .nc:active { background: var(--card2); transform: scale(0.99); }
+    .nc-meta { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; flex-wrap: wrap; }
+    .sbadge { font-size: 9.5px; font-weight: 700; letter-spacing: 0.4px; padding: 2px 6px; border-radius: 5px; font-family: 'JetBrains Mono', monospace; }
+    .s-et { background: rgba(0,180,255,0.12); color: #00b4ff; }
+    .s-bs { background: rgba(255,122,53,0.12); color: var(--orange); }
+    .s-bl { background: rgba(0,214,143,0.12); color: var(--green); }
+    .cbadge { font-size: 9.5px; font-weight: 600; padding: 2px 6px; border-radius: 5px; }
+    .c-breaking { background: rgba(255,77,106,0.12); color: var(--red); }
+    .c-economy { background: rgba(77,166,255,0.12); color: var(--blue); }
+    .c-geo { background: rgba(240,165,0,0.12); color: var(--accent); }
+    .c-corporate { background: rgba(0,214,143,0.12); color: var(--green); }
+    .c-markets { background: rgba(180,100,255,0.12); color: #b464ff; }
+    .nc-time { font-size: 9.5px; color: var(--text2); font-family: 'JetBrains Mono', monospace; margin-left: auto; }
+    .nc-title { font-size: 13.5px; font-weight: 600; line-height: 1.4; margin-bottom: 5px; }
+    .nc-desc { font-size: 12px; color: var(--text2); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .nc-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; }
+    .nc-sector { font-size: 10.5px; color: var(--text2); font-style: italic; }
+    .read-btn { font-size: 11px; font-weight: 600; color: var(--accent); padding: 4px 9px; border-radius: 6px; border: 1px solid rgba(240,165,0,0.28); background: transparent; cursor: pointer; }
+
+    /* EMPTY */
+    .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 20px; text-align: center; }
+    .empty-icon { font-size: 44px; margin-bottom: 14px; }
+    .empty-h { font-size: 15px; font-weight: 700; margin-bottom: 7px; }
+    .empty-p { font-size: 12.5px; color: var(--text2); line-height: 1.6; max-width: 260px; }
+
+    /* ACTION BAR */
+    .action-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      padding: 9px 14px calc(9px + var(--safe-b));
+      background: var(--surface); border-top: 1px solid var(--border);
+      display: flex; gap: 7px;
+      backdrop-filter: blur(12px);
+    }
+    .btn {
+      flex: 1; padding: 11px 6px; border-radius: 10px; border: none;
+      font-size: 11.5px; font-weight: 700; cursor: pointer;
+      transition: 0.12s; display: flex; align-items: center; justify-content: center; gap: 5px;
+      font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: 0.2px;
+    }
+    .btn:active { transform: scale(0.94); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .btn-fetch { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .btn-sum { background: var(--accent); color: #000; }
+
+    /* SPINNER */
+    .spin { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.2); border-top-color: currentColor; border-radius: 50%; animation: rot .7s linear infinite; display: none; }
+    .loading .spin { display: block; }
+    @keyframes rot { to { transform: rotate(360deg); } }
+
+    /* SETTINGS PANEL */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 100; backdrop-filter: blur(3px); display: none; }
+    .overlay.open { display: block; }
+    .panel {
+      position: fixed; top: 0; right: -105%; bottom: 0; width: min(390px, 100%);
+      background: var(--surface); z-index: 101; overflow-y: auto;
+      transition: right .3s cubic-bezier(.4,0,.2,1); padding-bottom: calc(16px + var(--safe-b));
+    }
+    .panel.open { right: 0; }
+    .p-hdr {
+      padding: calc(var(--safe-t) + 14px) 14px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; background: var(--surface); z-index: 1;
+    }
+    .p-hdr h2 { font-size: 17px; font-weight: 700; }
+    .p-sec { padding: 14px; border-bottom: 1px solid var(--border); }
+    .p-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase; color: var(--accent); font-family: 'JetBrains Mono', monospace; margin-bottom: 11px; }
+    .inp { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 10px 11px; color: var(--text); font-size: 13.5px; font-family: 'Plus Jakarta Sans', sans-serif; outline: none; transition: .15s; }
+    .inp:focus { border-color: rgba(240,165,0,0.45); }
+    .inp::placeholder { color: var(--text2); }
+    .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; min-height: 30px; }
+    .chip { display: flex; align-items: center; gap: 3px; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(240,165,0,0.25); border-radius: 20px; padding: 3px 9px; font-size: 11.5px; font-weight: 500; }
+    .chip-x { cursor: pointer; font-size: 13px; opacity: .7; }
+    .chip-x:hover { opacity: 1; }
+    .chip-row { display: flex; gap: 6px; }
+    .sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .stog {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 9px; padding: 8px 10px;
+      font-size: 11.5px; font-weight: 500; cursor: pointer; transition: .15s;
+    }
+    .stog.on { background: var(--accent-glow); border-color: rgba(240,165,0,0.3); color: var(--accent); }
+    .trow { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); }
+    .trow:last-child { border: none; }
+    .tlbl { font-size: 13.5px; font-weight: 500; }
+    .tdesc { font-size: 10.5px; color: var(--text2); margin-top: 1px; }
+    .tsw { width: 42px; height: 25px; background: var(--card); border-radius: 13px; border: 1px solid var(--border); position: relative; cursor: pointer; transition: .2s; flex-shrink: 0; }
+    .tsw.on { background: var(--accent); border-color: var(--accent); }
+    .tsw::after { content: ''; position: absolute; width: 19px; height: 19px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+    .tsw.on::after { transform: translateX(17px); }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: calc(76px + var(--safe-b) + 8px); left: 50%; transform: translateX(-50%) translateY(16px); background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 9px 16px; border-radius: 20px; font-size: 12.5px; font-weight: 500; z-index: 300; opacity: 0; transition: .22s; pointer-events: none; white-space: nowrap; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-logo">MC</div>
+    <div class="hdr-info">
+      <h1>MC Summarizer</h1>
+      <div class="hdr-sub" id="hdr-sub">PWA · Ready</div>
+    </div>
+    <div class="hdr-btns">
+      <div class="icon-btn" id="btn-settings" title="Settings">⚙️</div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="sdot" id="sdot"></div>
+    <span id="stext">Idle</span>
+    <span id="cnt-items">0 items</span>
+    <span id="cnt-sum">0 summaries</span>
+  </div>
+
+  <!-- DEBUG LOG -->
+  <div id="dbg" style="display:none;padding:6px 14px;background:#0a0a18;border-bottom:1px solid var(--border);font-size:10px;font-family:monospace;color:var(--text2);max-height:80px;overflow-y:auto;flex-shrink:0;"></div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab on" data-t="all" onclick="switchTab('all')">All <span class="tbadge" id="b-all">0</span></div>
+    <div class="tab" data-t="corporate" onclick="switchTab('corporate')">Corporate <span class="tbadge" id="b-corporate">0</span></div>
+    <div class="tab" data-t="breaking" onclick="switchTab('breaking')">Breaking <span class="tbadge" id="b-breaking">0</span></div>
+    <div class="tab" data-t="economy" onclick="switchTab('economy')">Economy <span class="tbadge" id="b-economy">0</span></div>
+    <div class="tab" data-t="geo" onclick="switchTab('geo')">Geo <span class="tbadge" id="b-geo">0</span></div>
+    <div class="tab" data-t="markets" onclick="switchTab('markets')">Markets <span class="tbadge" id="b-markets">0</span></div>
+  </div>
+
+  <!-- FEED -->
+  <div class="feed" id="feed">
+    <div class="notice">
+      <strong>ℹ️ PWA Mode</strong> — RSS feeds load on demand. Tap <strong>Fetch RSS</strong> below to start. WhatsApp/MC notifications require the Android app to stay running.
+    </div>
+    <div class="empty">
+      <div class="empty-icon">📰</div>
+      <div class="empty-h">No articles yet</div>
+      <div class="empty-p">Tap <strong>Fetch RSS</strong> to load the latest news from ET, Business Standard & Hindu BusinessLine.</div>
+    </div>
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar">
+    <button class="btn btn-fetch" id="btn-fetch" onclick="fetchAllFeeds()">
+      <div class="spin"></div><span>📡 Fetch RSS</span>
+    </button>
+    <button class="btn btn-sum" id="btn-sum" onclick="summarize()">
+      <div class="spin"></div><span>🤖 Summarize</span>
+    </button>
+
+  </div>
+
+</div>
+
+<!-- SETTINGS -->
+<div class="overlay" id="overlay" onclick="closeSettings()"></div>
+<div class="panel" id="panel">
+  <div class="p-hdr">
+    <h2>⚙️ Settings</h2>
+    <div class="icon-btn" onclick="closeSettings()">✕</div>
+  </div>
+
+  <div class="p-sec">
+    <div class="p-lbl">🔑 API Keys</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <input class="inp" type="password" id="k-groq" placeholder="Groq API Key (gsk_...)" oninput="savePrefs()">
+      <div style="font-size:10.5px;color:var(--text2);margin-top:-4px;padding-left:2px">Get free key → <a href="https://console.groq.com" target="_blank" style="color:var(--accent)">console.groq.com</a></div>
+    </div>
+  </div>
+
+  <div class="p-sec">
+    <div class="p-lbl">🏢 Corporate Watchlist</div>
+    <div class="chips" id="watchlist-chips"></div>
+    <div class="chip-row">
+      <input class="inp" type="text" id="wl-inp" placeholder="Add company name…" style="flex:1" onkeydown="if(event.key==='Enter')addChip()">
+      <button class="btn btn-fetch" style="flex:0;padding:9px 12px;font-size:12px" onclick="addChip()">Add</button>
+    </div>
+  </div>
+
+  <div class="p-sec">
+    <div class="p-lbl">📊 Sector Watchlist</div>
+    <div class="sgrid" id="sector-grid"></div>
+  </div>
+
+  <div class="p-sec">
+    <div class="p-lbl">🏷️ Topic Toggles</div>
+    <div id="topic-rows"></div>
+  </div>
+
+  <div class="p-sec">
+    <div class="p-lbl">📰 Sources</div>
+    <div id="source-rows"></div>
+  </div>
+
+  <div class="p-sec" style="border:none">
+    <button class="btn btn-fetch" style="width:100%" onclick="clearAll()">🗑️ Clear Cache</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────────
+
+const RSS2JSON = 'https://api.rss2json.com/v1/api.json?count=50&rss_url=';
+// Own Vercel proxy — same domain, no CORS issues on any device/network
+const OWN_PROXY = url => `/api/rss?url=${encodeURIComponent(url)}`;
+// External fallbacks (laptop/wifi may work even if mobile doesn't)
+const PROXIES = [
+  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  url => `https://thingproxy.freeboard.io/fetch/${url}`
+];
+
+const FEEDS = {
+  et: [
+    { url:'https://economictimes.indiatimes.com/markets/rss.cms', name:'ET Markets' },
+    { url:'https://economictimes.indiatimes.com/news/economy/rss.cms', name:'ET Economy' },
+    { url:'https://economictimes.indiatimes.com/markets/stocks/rss.cms', name:'ET Companies' }
+  ],
+  bs: [
+    { url:'https://www.business-standard.com/rss/latest.rss', name:'BS Latest' },
+    { url:'https://www.business-standard.com/rss/markets-106.rss', name:'BS Markets' },
+    { url:'https://www.business-standard.com/rss/economy-policy-102.rss', name:'BS Economy' },
+    { url:'https://www.business-standard.com/rss/companies-101.rss', name:'BS Companies' }
+  ],
+  bl: [
+    { url:'https://www.thehindubusinessline.com/markets/feeder/default.rss', name:'BL Markets' },
+    { url:'https://www.thehindubusinessline.com/economy/feeder/default.rss', name:'BL Economy' }
+  ]
+};
+
+const SECTOR_KW = {
+  Banking: ['HDFC','ICICI','SBI','Axis','Kotak','IndusInd','NPA','credit growth','lending'],
+  Pharma:  ['Sun Pharma','Dr Reddy','Cipla','Biocon','USFDA','generic drug','pharma'],
+  'IT/Tech':['TCS','Infosys','Wipro','HCL','LTIMindtree','attrition','H1B','tech company'],
+  Auto:    ['Maruti','Tata Motors','Mahindra',' EV ','passenger vehicle','two-wheeler','automobile'],
+  FMCG:   ['HUL','ITC','Nestle','Britannia','Dabur','rural demand'],
+  Energy:  ['ONGC','BPCL','NTPC','Adani Green','crude oil','renewable energy','power grid'],
+  Metals:  ['Tata Steel','JSW Steel','Hindalco','Vedanta','Coal India','steel','aluminium'],
+  Infra:   ['L&T','NHAI','road project','highway','railway','airport','infrastructure'],
+  Realty:  ['DLF','Godrej Properties','Prestige','home loan','REIT','real estate','housing'],
+  Insurance:['LIC','HDFC Life','SBI Life','IRDAI','general insurance'],
+  PSU:     ['BHEL','HAL','IRCTC','disinvestment','Navratna','CPSE','public sector'],
+  Chemicals:['Pidilite','Asian Paints','Deepak Nitrite','agrochemical','fertilizer']
+};
+
+const CAT_KW = {
+  breaking: ['alert','breaking','flash','urgent','just in','snap'],
+  economy:  ['RBI','GDP','inflation','fiscal','budget','monetary policy','repo rate','CPI','WPI','trade deficit','current account','IMF','finance ministry'],
+  geo:      ['war','China','US-India','geopolitical','sanctions','Russia','Middle East','tariff','Trump','OPEC','Pakistan','border','military','nuclear'],
+  markets:  ['Sensex','Nifty','BSE','NSE','FII','DII','rally','crash','IPO','listing','stock market','equity market']
+};
+
+// ── STATE ──────────────────────────────────────────────────────────
+
+let articles = [], summaries = {}, currentTab = 'all', seen = new Set();
+
+let P = {
+  watchlist: [], sectors: [],
+  topics: { breaking:true, economy:true, geo:true, markets:false, corpAll:false },
+  sources: { et:true, bs:true, bl:true },
+  groqKey:''
+};
+
+// ── INIT ───────────────────────────────────────────────────────────
+
+function init() {
+  try { const s = localStorage.getItem('mcp'); if(s) P={...P,...JSON.parse(s)}; } catch(e){}
+  try {
+    const a = localStorage.getItem('mca'); if(a){ articles=JSON.parse(a); articles.forEach(x=>seen.add(x.url)); }
+    const s = localStorage.getItem('mcs'); if(s) summaries=JSON.parse(s);
+  } catch(e){}
+  renderSettings();
+  renderFeed();
+  updateBadges();
+  document.getElementById('cnt-items').textContent = articles.length + ' items';
+  document.getElementById('cnt-sum').textContent = Object.keys(summaries).length + ' summaries';
+}
+
+// ── FETCH ──────────────────────────────────────────────────────────
+
+async function fetchAllFeeds() {
+  const btn = document.getElementById('btn-fetch');
+  setLoad(btn, true);
+  const dbgEl = document.getElementById('dbg');
+  dbgEl.innerHTML = ''; dbgEl.style.display = 'none';
+
+  const enabled = [];
+  if(P.sources.et) enabled.push(...FEEDS.et);
+  if(P.sources.bs) enabled.push(...FEEDS.bs);
+  if(P.sources.bl) enabled.push(...FEEDS.bl);
+
+  let fresh = [], failCount = 0, done = 0;
+
+  for (const feed of enabled) {
+    setStatus('busy', `Fetching ${feed.name}… (${done+1}/${enabled.length})`);
+    try {
+      const items = await fetchFeed(feed);
+      fresh.push(...items);
+      document.getElementById('cnt-items').textContent = fresh.length + ' items';
+    } catch(e) {
+      failCount++;
+    }
+    done++;
+    renderFeed(); updateBadges();
+    if (done < enabled.length) await sleep(1200);
+  }
+
+  // Deduplicate by URL, merge with existing, sort newest first
+  const byUrl = new Map();
+  // Existing articles first (lower priority)
+  for (const a of articles) if(a.url) byUrl.set(a.url, a);
+  // Fresh articles override
+  for (const a of fresh) if(a.url) byUrl.set(a.url, a);
+
+  articles = Array.from(byUrl.values())
+    .sort((a,b) => new Date(b.pub) - new Date(a.pub))
+    .slice(0, 300);
+
+  seen = new Set(articles.map(a => a.url));
+  reMatch();
+
+  try { localStorage.setItem('mca', JSON.stringify(articles)); } catch(e){}
+
+  const t = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  setStatus(failCount === enabled.length ? 'err' : 'ok', 'Fetched ' + t);
+  document.getElementById('hdr-sub').textContent = 'Fetched ' + t;
+  document.getElementById('cnt-items').textContent = articles.length + ' items';
+  toast('✅ ' + articles.length + ' articles' + (failCount ? ` · ⚠️ ${failCount} feeds failed` : ''));
+  setLoad(btn, false);
+  renderFeed(); updateBadges();
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function fetchWithTimeout(url, ms=15000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    return res;
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
+async function fetchFeed(feed) {
+  // Strategy 1: Own Netlify proxy (same domain — always works on any device)
+  try {
+    const res = await fetchWithTimeout(OWN_PROXY(feed.url), 12000);
+    if (res.ok) {
+      const txt = await res.text();
+      if (txt && txt.length > 200) {
+        const items = parseRSS(txt, feed.name);
+        if (items.length) { dbgLog(`✅ ${feed.name}: ${items.length} via own proxy`); return items; }
+      }
+      dbgLog(`⚠️ ${feed.name}: own proxy 0 items`);
+    } else {
+      dbgLog(`⚠️ ${feed.name}: own proxy HTTP ${res.status}`);
+    }
+  } catch(e) { dbgLog(`⚠️ ${feed.name}: own proxy err - ${e.message.slice(0,30)}`); }
+
+  // Strategy 2: rss2json
+  try {
+    const res = await fetchWithTimeout(RSS2JSON + encodeURIComponent(feed.url), 15000);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.items?.length) {
+        const parsed = parseJSON(data.items, feed.name);
+        if (parsed.length) { dbgLog(`✅ ${feed.name}: ${parsed.length} via rss2json`); return parsed; }
+      }
+      dbgLog(`⚠️ ${feed.name}: rss2json 0 items (${data.status})`);
+    }
+  } catch(e) { dbgLog(`⚠️ ${feed.name}: rss2json - ${e.message.slice(0,30)}`); }
+
+  // Strategy 3: External CORS proxies
+  for (let i = 0; i < PROXIES.length; i++) {
+    try {
+      const res = await fetchWithTimeout(PROXIES[i](feed.url), 15000);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      let txt = await res.text();
+      if (txt.startsWith('{') && txt.includes('"contents"')) {
+        txt = JSON.parse(txt).contents || '';
+      }
+      if (!txt || txt.length < 200) throw new Error('Empty');
+      const items = parseRSS(txt, feed.name);
+      if (items.length) { dbgLog(`✅ ${feed.name}: ${items.length} via proxy${i+1}`); return items; }
+      throw new Error('0 items');
+    } catch(e) { dbgLog(`⚠️ proxy${i+1} ${feed.name}: ${e.message.slice(0,20)}`); }
+  }
+
+  dbgLog(`❌ ${feed.name}: ALL failed`);
+  throw new Error('All failed: ' + feed.name);
+}
+
+// Parse rss2json JSON response
+function parseJSON(items, src) {
+  const cutoff = Date.now() - 7*24*60*60*1000;
+  const source = src.startsWith('ET')?'et': src.startsWith('BS')?'bs':'bl';
+  return items.map(item => {
+    const title = (item.title||'').trim();
+    const desc  = (item.description||item.content||'').replace(/<[^>]+>/g,'').trim();
+    const url   = item.link||item.guid||'';
+    const d     = item.pubDate ? new Date(item.pubDate) : new Date();
+    if (d.getTime() < cutoff) return null;
+    const text  = title + ' ' + desc;
+    return { url, title, desc, source, srcName:src, pub:d.toISOString(),
+      cats: categorize(text), sectors: matchSectors(text), wl: matchWL(text) };
+  }).filter(Boolean);
+}
+
+function parseRSS(xml, src) {
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  const items = Array.from(doc.querySelectorAll('item'));
+  const cutoff = Date.now() - 7*24*60*60*1000;
+  const source = src.startsWith('ET')?'et': src.startsWith('BS')?'bs':'bl';
+  return items.map(el => {
+    const title = el.querySelector('title')?.textContent?.trim()||'';
+    const desc  = (el.querySelector('description')?.textContent||'').replace(/<[^>]+>/g,'').trim();
+    const url   = (el.querySelector('link')?.textContent||el.querySelector('guid')?.textContent||'').trim();
+    const pub   = el.querySelector('pubDate')?.textContent?.trim()||'';
+    const d     = pub ? new Date(pub) : new Date();
+    if(d.getTime()<cutoff) return null;
+    const text  = title + ' ' + desc;
+    return { url, title, desc, source, srcName:src, pub:d.toISOString(),
+      cats: categorize(text), sectors: matchSectors(text), wl: matchWL(text) };
+  }).filter(Boolean);
+}
+
+function categorize(text) {
+  const lo = text.toLowerCase();
+  const out = [];
+  for(const [cat,kws] of Object.entries(CAT_KW))
+    if(kws.some(k=>lo.includes(k.toLowerCase()))) out.push(cat);
+  return out.length?out:['general'];
+}
+
+function matchSectors(text) {
+  const lo = text.toLowerCase();
+  return P.sectors.filter(s => SECTOR_KW[s]?.some(k=>lo.includes(k.toLowerCase())));
+}
+
+function matchWL(text) {
+  const lo = text.toLowerCase();
+  return P.watchlist.filter(w => lo.includes(w.toLowerCase()));
+}
+
+function reMatch() {
+  articles = articles.map(a => ({ ...a,
+    cats: categorize(a.title+' '+a.desc),
+    sectors: matchSectors(a.title+' '+a.desc),
+    wl: matchWL(a.title+' '+a.desc)
+  }));
+}
+
+// ── FILTER ENGINE ─────────────────────────────────────────────────
+
+function getTab(tab) {
+  switch(tab) {
+    case 'all':       return articles; // show all fetched articles
+    case 'corporate': return articles.filter(a => a.wl.length>0 || a.sectors.length>0);
+    case 'breaking':  return P.topics.breaking ? articles.filter(a=>a.cats.includes('breaking')) : [];
+    case 'economy':   return P.topics.economy  ? articles.filter(a=>a.cats.includes('economy'))  : [];
+    case 'geo':       return P.topics.geo      ? articles.filter(a=>a.cats.includes('geo'))       : [];
+    case 'markets':   return articles.filter(a=>a.cats.includes('markets'));
+    default: return articles;
+  }
+}
+
+// ── GROQ AI ────────────────────────────────────────────────────────
+
+async function summarize() {
+  if(!P.groqKey){
+    openSettings();
+    setTimeout(()=>{
+      const el=document.getElementById('k-groq');
+      el.scrollIntoView({behavior:'smooth',block:'center'});
+      el.focus();
+      el.style.borderColor='rgba(240,165,0,0.8)';
+      setTimeout(()=>el.style.borderColor='',2000);
+    }, 320);
+    toast('👆 Enter your Groq API key here');
+    return;
+  }
+  const btn = document.getElementById('btn-sum');
+  setLoad(btn,true); setStatus('busy','Summarizing with Groq…');
+
+  const tabs = ['all','corporate','breaking','economy','geo','markets'];
+  let done = 0;
+
+  try {
+    for(const tab of tabs) {
+      const arts = getTab(tab).slice(0,15);
+      if(!arts.length) continue;
+
+      const lines = arts.map((a,i)=>`${i+1}. [${a.srcName}] ${a.title}: ${(a.desc||'').slice(0,200)}`).join('\n');
+      const prompt = `You are MC Summarizer, a sharp Indian financial news assistant.
+Summarise these ${arts.length} articles for the "${tab.toUpperCase()}" tab in exactly 3–4 sentences.
+Be specific: name companies, figures, policies. Use a professional tone.
+
+${lines}
+
+Summary:`;
+
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+P.groqKey,'Content-Type':'application/json'},
+        body:JSON.stringify({ model:'llama-3.1-8b-instant', max_tokens:350, temperature:0.25,
+          messages:[{role:'user',content:prompt}] })
+      });
+      if(!res.ok) throw new Error('Groq HTTP '+res.status);
+      const data = await res.json();
+      summaries[tab] = { text: data.choices[0]?.message?.content?.trim()||'', time: new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) };
+      done++;
+    }
+    try { localStorage.setItem('mcs',JSON.stringify(summaries)); } catch(e){}
+    document.getElementById('cnt-sum').textContent = Object.keys(summaries).length+' summaries';
+    toast('✅ '+done+' summaries ready');
+    setStatus('ok','Summarized');
+  } catch(e) {
+    toast('❌ Groq error: '+e.message.slice(0,40));
+    setStatus('err','Groq error');
+  }
+
+  setLoad(btn,false); renderFeed();
+}
+
+// ── RENDER ────────────────────────────────────────────────────────
+
+function renderFeed() {
+  const arts = getTab(currentTab);
+  let html = `<div class="notice"><strong>ℹ️ PWA Mode</strong> — RSS loads on demand. WhatsApp/MC notification capture requires the Android app.</div>`;
+
+  if(summaries[currentTab]) {
+    html += `<div class="sum-card">
+      <div class="sum-hdr"><span class="sum-lbl">🤖 AI Summary</span><span class="sum-time">${summaries[currentTab].time}</span></div>
+      <div class="sum-txt">${esc(summaries[currentTab].text)}</div>
+    </div>`;
+  }
+
+  if(!arts.length) {
+    html += `<div class="empty">
+      <div class="empty-icon">📰</div>
+      <div class="empty-h">No articles in ${currentTab}</div>
+      <div class="empty-p">Tap <strong>Fetch RSS</strong> to load news, or adjust filters in Settings.</div>
+    </div>`;
+  } else {
+    html += arts.map(a => cardHtml(a)).join('');
+  }
+
+  document.getElementById('feed').innerHTML = html;
+}
+
+function cardHtml(a) {
+  const t = new Date(a.pub).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const cats = a.cats.filter(c=>c!=='general');
+  const catBadges = cats.slice(0,2).map(c=>`<span class="cbadge c-${c}">${c}</span>`).join('');
+  const tagline = [...a.wl,...a.sectors].slice(0,2).join(', ');
+  return `<div class="nc" onclick="open_('${esc(a.url)}')">
+    <div class="nc-meta">
+      <span class="sbadge s-${a.source}">${a.source.toUpperCase()}</span>
+      ${catBadges}
+      <span class="nc-time">${t}</span>
+    </div>
+    <div class="nc-title">${esc(a.title)}</div>
+    ${a.desc?`<div class="nc-desc">${esc(a.desc)}</div>`:''}
+    <div class="nc-foot">
+      <span class="nc-sector">${tagline||'&nbsp;'}</span>
+      <button class="read-btn" onclick="event.stopPropagation();open_('${esc(a.url)}')">Read →</button>
+    </div>
+  </div>`;
+}
+
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function open_(u){ if(u&&u.startsWith('http')) window.open(u,'_blank'); }
+
+function updateBadges(){
+  ['all','corporate','breaking','economy','geo','markets'].forEach(t=>{
+    const el=document.getElementById('b-'+t);
+    if(el) el.textContent=getTab(t).length;
+  });
+}
+
+// ── TABS ──────────────────────────────────────────────────────────
+
+function switchTab(t){
+  currentTab=t;
+  document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('on',el.dataset.t===t));
+  renderFeed();
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────
+
+function renderSettings(){
+  document.getElementById('k-groq').value = P.groqKey||'';
+  renderChips();
+
+  document.getElementById('sector-grid').innerHTML = Object.keys(SECTOR_KW).map(s=>`
+    <div class="stog ${P.sectors.includes(s)?'on':''}" onclick="togSector('${s}',this)">${s}</div>
+  `).join('');
+
+  const topics=[
+    {k:'breaking',l:'🚨 Breaking News',d:'Alerts and flash news'},
+    {k:'economy', l:'📊 Economy / RBI', d:'Macro, policy, fiscal'},
+    {k:'geo',     l:'🌍 Geopolitical',  d:'Global events, trade wars'},
+    {k:'markets', l:'📈 Markets',        d:'Sensex, Nifty, FII/DII'},
+    {k:'corpAll', l:'🏢 Corporate All',  d:'Show all company news'},
+  ];
+  document.getElementById('topic-rows').innerHTML = topics.map(t=>`
+    <div class="trow">
+      <div><div class="tlbl">${t.l}</div><div class="tdesc">${t.d}</div></div>
+      <div class="tsw ${P.topics[t.k]?'on':''}" onclick="togTopic('${t.k}',this)"></div>
+    </div>
+  `).join('');
+
+  const srcs=[{k:'et',l:'📘 Economic Times'},{k:'bs',l:'📙 Business Standard'},{k:'bl',l:'📗 Hindu BusinessLine'}];
+  document.getElementById('source-rows').innerHTML = srcs.map(s=>`
+    <div class="trow">
+      <div class="tlbl">${s.l}</div>
+      <div class="tsw ${P.sources[s.k]?'on':''}" onclick="togSource('${s.k}',this)"></div>
+    </div>
+  `).join('');
+}
+
+function renderChips(){
+  document.getElementById('watchlist-chips').innerHTML = P.watchlist.map(w=>`
+    <span class="chip">${w} <span class="chip-x" onclick="rmChip('${w}')">×</span></span>
+  `).join('');
+}
+
+function addChip(){
+  const inp=document.getElementById('wl-inp'); const v=inp.value.trim();
+  if(v&&!P.watchlist.includes(v)){ P.watchlist.push(v); inp.value=''; renderChips(); savePrefs(); reMatch(); renderFeed(); updateBadges(); }
+}
+function rmChip(n){ P.watchlist=P.watchlist.filter(w=>w!==n); renderChips(); savePrefs(); reMatch(); renderFeed(); updateBadges(); }
+function togSector(s,el){ P.sectors.includes(s)?P.sectors=P.sectors.filter(x=>x!==s):P.sectors.push(s); el.classList.toggle('on'); savePrefs(); reMatch(); renderFeed(); updateBadges(); }
+function togTopic(k,el){ P.topics[k]=!P.topics[k]; el.classList.toggle('on',P.topics[k]); savePrefs(); renderFeed(); updateBadges(); }
+function togSource(k,el){ P.sources[k]=!P.sources[k]; el.classList.toggle('on',P.sources[k]); savePrefs(); }
+
+function savePrefs(){
+  P.groqKey  = document.getElementById('k-groq').value;
+  try { localStorage.setItem('mcp',JSON.stringify(P)); } catch(e){}
+}
+
+function openSettings(){ document.getElementById('panel').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+function closeSettings(){ document.getElementById('panel').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+
+document.getElementById('btn-settings').addEventListener('click', openSettings);
+
+function clearAll(){
+  articles=[]; summaries={}; seen=new Set();
+  ['mca','mcs'].forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
+  renderFeed(); updateBadges();
+  document.getElementById('cnt-items').textContent='0 items';
+  document.getElementById('cnt-sum').textContent='0 summaries';
+  toast('🗑️ Cache cleared');
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────
+
+function setStatus(type, txt){
+  const d=document.getElementById('sdot');
+  d.className='sdot'+(type==='busy'?' busy':type==='err'?' err':type==='ok'?' ok':'');
+  document.getElementById('stext').textContent=txt;
+}
+function setLoad(btn, on){
+  const s=btn.querySelector('.spin'); if(s) s.style.display=on?'block':'none'; btn.disabled=on;
+}
+let _tt; function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),3000); }
+
+// ── START ─────────────────────────────────────────────────────────
+
+init();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>

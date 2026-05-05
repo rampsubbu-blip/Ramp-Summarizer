@@ -1,0 +1,51 @@
+// Vercel Serverless Function: /api/rss
+// Fetches RSS feeds server-side — no CORS issues on any device/network
+
+export default async function handler(req, res) {
+  const { url } = req.query;
+
+  if (!url) {
+    return res.status(400).send('Missing ?url= parameter');
+  }
+
+  // Only allow known news domains
+  const allowed = [
+    'economictimes.indiatimes.com',
+    'business-standard.com',
+    'thehindubusinessline.com'
+  ];
+
+  let isAllowed = false;
+  try {
+    const parsed = new URL(url);
+    isAllowed = allowed.some(d => parsed.hostname.endsWith(d));
+  } catch(e) {}
+
+  if (!isAllowed) {
+    return res.status(403).send('Domain not allowed');
+  }
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; MCNewsBot/1.0)',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+      },
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).send(`Feed returned ${response.status}`);
+    }
+
+    const body = await response.text();
+
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return res.status(200).send(body);
+
+  } catch (err) {
+    return res.status(500).send(`Proxy error: ${err.message}`);
+  }
+}
