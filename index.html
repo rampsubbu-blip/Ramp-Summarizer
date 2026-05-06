@@ -489,7 +489,7 @@ async function fetchWithTimeout(url, ms=15000) {
 async function fetchFeed(feed) {
   const proxyUrl = `/api/rss?url=${encodeURIComponent(feed.url)}`;
   try {
-    const res = await fetchWithTimeout(proxyUrl, 15000);
+    const res = await fetchWithTimeout(proxyUrl, 10000);
     if (res.ok) {
       const data = await res.json();
       if (data.items?.length) {

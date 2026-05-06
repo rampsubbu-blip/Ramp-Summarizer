@@ -1,5 +1,5 @@
-const CACHE = 'mc-summarizer-v1';
-const ASSETS = ['/', '/index.html', '/manifest.json'];
+const CACHE = 'mc-summarizer-v8';
+const ASSETS = ['/manifest.json', '/icon-192.svg', '/icon-512.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -17,7 +17,12 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  // Cache-first for same-origin assets; network-first for API calls
+  // Always fetch HTML fresh from network — never cache index.html
+  if (url.pathname === '/' || url.pathname.endsWith('.html')) {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    return;
+  }
+  // Cache-first for static assets (icons, manifest)
   if (url.origin === location.origin) {
     e.respondWith(
       caches.match(e.request).then(cached =>
@@ -31,5 +36,4 @@ self.addEventListener('fetch', e => {
       )
     );
   }
-  // For external APIs (RSS proxy, Groq, Telegram) — always network
 });
