@@ -439,6 +439,7 @@ async function fetchAllFeeds() {
       document.getElementById('cnt-items').textContent = fresh.length + ' items';
     } catch(e) {
       failCount++;
+      dbgLog(`❌ FAIL: ${feed.name}`);
     }
     done++;
     renderFeed(); updateBadges();
@@ -486,19 +487,18 @@ async function fetchWithTimeout(url, ms=15000) {
 }
 
 async function fetchFeed(feed) {
-  // Vercel function now returns clean JSON — no XML parsing in browser at all
   const proxyUrl = `/api/rss?url=${encodeURIComponent(feed.url)}`;
   try {
     const res = await fetchWithTimeout(proxyUrl, 15000);
     if (res.ok) {
       const data = await res.json();
-      if (data.status === 'ok' && data.items?.length) {
+      if (data.items?.length) {
         const parsed = parseJSON(data.items, feed.name);
-        if (parsed.length) { dbgLog(`✅ ${feed.name}: ${parsed.length} articles`); return parsed; }
-        dbgLog(`⚠️ ${feed.name}: 0 after filter (${data.items.length} raw)`);
-      } else {
-        dbgLog(`⚠️ ${feed.name}: ${data.error || '0 items'}`);
+        dbgLog(`✅ ${feed.name}: ${parsed.length} articles (${data.items.length} raw)`);
+        return parsed; // return even if 0 — don't throw
       }
+      dbgLog(`⚠️ ${feed.name}: ${data.error || 'no items in response'}`);
+      return [];
     } else {
       dbgLog(`⚠️ ${feed.name}: HTTP ${res.status}`);
     }
@@ -508,18 +508,21 @@ async function fetchFeed(feed) {
 
 // Parse rss2json JSON response
 function parseJSON(items, src) {
-  const cutoff = Date.now() - 7*24*60*60*1000;
   const source = src.startsWith('ET')?'et': src.startsWith('BS')?'bs':'bl';
-  return items.map(item => {
+  const out = [];
+  for (const item of items) {
     const title = (item.title||'').trim();
+    if (!title) continue; // skip truly empty items
     const desc  = (item.description||item.content||'').replace(/<[^>]+>/g,'').trim();
-    const url   = item.link||item.guid||'';
+    const url   = item.link || item.guid || item.url || ('gn-'+Math.random());
     const d     = item.pubDate ? new Date(item.pubDate) : new Date();
-    if (d.getTime() < cutoff) return null;
+    const pub   = isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
     const text  = title + ' ' + desc;
-    return { url, title, desc, source, srcName:src, pub:d.toISOString(),
-      cats: categorize(text), sectors: matchSectors(text), wl: matchWL(text) };
-  }).filter(Boolean);
+    out.push({ url, title, desc, source, srcName:src, pub,
+      cats: categorize(text), sectors: matchSectors(text), wl: matchWL(text) });
+  }
+  dbgLog(`  parseJSON: ${items.length} in → ${out.length} out (${src})`);
+  return out;
 }
 
 function parseRSS(xml, src) {
