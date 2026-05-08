@@ -258,9 +258,6 @@
     <span id="cnt-sum">0 summaries</span>
   </div>
 
-  <!-- DEBUG LOG -->
-  <div id="dbg" style="display:none;padding:6px 14px;background:#0a0a18;border-bottom:1px solid var(--border);font-size:10px;font-family:monospace;color:var(--text2);max-height:80px;overflow-y:auto;flex-shrink:0;"></div>
-
   <!-- TABS -->
   <div class="tabs">
     <div class="tab on" data-t="all" onclick="switchTab('all')">All <span class="tbadge" id="b-all">0</span></div>
@@ -393,6 +390,7 @@ const CAT_KW = {
 // ── STATE ──────────────────────────────────────────────────────────
 
 let articles = [], summaries = {}, currentTab = 'all', seen = new Set();
+const dbgLog = (...args) => console.debug('[MC]', ...args);
 
 let P = {
   watchlist: [], sectors: [],
@@ -421,13 +419,18 @@ function init() {
 async function fetchAllFeeds() {
   const btn = document.getElementById('btn-fetch');
   setLoad(btn, true);
-  const dbgEl = document.getElementById('dbg');
-  dbgEl.innerHTML = ''; dbgEl.style.display = 'none';
 
   const enabled = [];
   if(P.sources.et) enabled.push(...FEEDS.et);
   if(P.sources.bs) enabled.push(...FEEDS.bs);
   if(P.sources.bl) enabled.push(...FEEDS.bl);
+
+  if (!enabled.length) {
+    setStatus('err', 'Enable at least one source');
+    toast('Select one or more news sources in Settings');
+    setLoad(btn, false);
+    return;
+  }
 
   let fresh = [], failCount = 0, done = 0;
 
@@ -474,10 +477,23 @@ async function fetchAllFeeds() {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function fetchWithTimeout(url, ms=8000) {
-  const timeout = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('Timeout after ' + ms + 'ms')), ms)
-  );
-  return Promise.race([fetch(url), timeout]);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new Error('Timeout after ' + ms + 'ms')), ms);
+
+  try {
+    return await fetch(url, {
+      signal: controller.signal,
+      cache: 'no-store',
+      headers: { 'cache-control': 'no-store' }
+    });
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      throw new Error('Timeout after ' + ms + 'ms');
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function fetchFeed(feed) {
@@ -783,7 +799,11 @@ let _tt; function toast(msg){ const el=document.getElementById('toast'); el.text
 // ── START ─────────────────────────────────────────────────────────
 
 init();
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    reg.update().catch(() => {});
+  }).catch(() => {});
+}
 </script>
 </body>
 </html>

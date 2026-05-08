@@ -1,4 +1,4 @@
-const CACHE = 'mc-summarizer-v8';
+const CACHE = 'mc-summarizer-v9';
 const ASSETS = ['/manifest.json', '/icon-192.svg', '/icon-512.svg'];
 
 self.addEventListener('install', e => {
@@ -17,13 +17,19 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+
+  if (url.pathname.startsWith('/api/')) {
+    e.respondWith(fetch(e.request, { cache: 'no-store' }));
+    return;
+  }
+
   // Always fetch HTML fresh from network — never cache index.html
   if (url.pathname === '/' || url.pathname.endsWith('.html')) {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     return;
   }
-  // Cache-first for static assets (icons, manifest)
-  if (url.origin === location.origin) {
+  // Cache-first for static assets only
+  if (url.origin === location.origin && ASSETS.includes(url.pathname)) {
     e.respondWith(
       caches.match(e.request).then(cached =>
         cached || fetch(e.request).then(res => {

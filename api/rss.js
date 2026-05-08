@@ -54,7 +54,7 @@ export default async function handler(req, res) {
 
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
     return res.status(200).json({ status: 'ok', items });
 
   } catch (err) {
