@@ -233,6 +233,120 @@
 
     ::-webkit-scrollbar { width: 3px; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* SAVE BUTTON on cards */
+    .save-btn {
+      font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 6px;
+      border: 1px solid var(--border); background: transparent;
+      cursor: pointer; transition: 0.15s; color: var(--text2);
+      display: flex; align-items: center; gap: 3px;
+    }
+    .save-btn.saved { color: var(--accent); border-color: rgba(240,165,0,0.4); background: var(--accent-glow); }
+    .save-btn:active { transform: scale(0.9); }
+
+    /* SAVED TAB PANEL */
+    .saved-panel { display: flex; flex-direction: column; height: 100%; }
+
+    /* SEARCH BAR */
+    .search-bar {
+      padding: 10px 14px 8px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .search-wrap {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 11px;
+      transition: 0.15s;
+    }
+    .search-wrap:focus-within { border-color: rgba(240,165,0,0.45); }
+    .search-wrap input {
+      flex: 1; background: none; border: none; outline: none;
+      color: var(--text); font-size: 13.5px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .search-wrap input::placeholder { color: var(--text2); }
+    .search-icon { color: var(--text2); font-size: 14px; flex-shrink: 0; }
+    .search-clear { color: var(--text2); font-size: 16px; cursor: pointer; flex-shrink: 0; display: none; }
+    .search-clear.show { display: block; }
+
+    /* FILTER CHIPS */
+    .filter-row {
+      display: flex; gap: 6px; overflow-x: auto;
+      padding: 7px 14px 0; scrollbar-width: none; flex-shrink: 0;
+    }
+    .filter-row::-webkit-scrollbar { display: none; }
+    .fchip {
+      font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--text2); cursor: pointer; white-space: nowrap; transition: 0.15s;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .fchip.on { background: var(--accent-glow); border-color: rgba(240,165,0,0.35); color: var(--accent); }
+
+    /* SAVED STATS ROW */
+    .saved-stats {
+      padding: 6px 14px;
+      font-size: 10.5px; color: var(--text2);
+      font-family: 'JetBrains Mono', monospace;
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    }
+    .saved-count { color: var(--accent); font-weight: 700; }
+
+    /* SAVED FEED */
+    .saved-feed {
+      flex: 1; overflow-y: auto;
+      padding: 10px 14px calc(78px + var(--safe-b));
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* SAVED CARD extras */
+    .nc-saved-meta {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 8px; padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .saved-date { font-size: 10px; color: var(--text2); font-family: 'JetBrains Mono', monospace; }
+    .unsave-btn {
+      margin-left: auto; font-size: 10.5px; color: var(--red);
+      background: rgba(255,77,106,0.08); border: 1px solid rgba(255,77,106,0.2);
+      border-radius: 5px; padding: 3px 8px; cursor: pointer; font-weight: 600;
+    }
+
+    /* SEARCH HIGHLIGHT */
+    mark { background: rgba(240,165,0,0.28); color: var(--accent); border-radius: 2px; padding: 0 1px; }
+
+    /* SAVE BUTTON */
+    .save-btn {
+      font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px;
+      border: 1px solid var(--border); background: transparent;
+      cursor: pointer; transition: 0.15s; color: var(--text2);
+    }
+    .save-btn.saved { color: var(--accent); border-color: rgba(240,165,0,0.4); background: var(--accent-glow); }
+    .save-btn:active { transform: scale(0.9); }
+    /* SEARCH BAR */
+    .search-bar { padding: 10px 14px 8px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink:0; }
+    .search-wrap { display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 11px; transition:.15s; }
+    .search-wrap:focus-within { border-color: rgba(240,165,0,0.45); }
+    .search-wrap input { flex:1; background:none; border:none; outline:none; color:var(--text); font-size:13.5px; font-family:'Plus Jakarta Sans',sans-serif; }
+    .search-wrap input::placeholder { color:var(--text2); }
+    .search-icon { color:var(--text2); font-size:14px; flex-shrink:0; }
+    .search-clear { color:var(--text2); font-size:16px; cursor:pointer; flex-shrink:0; display:none; }
+    .search-clear.show { display:block; }
+    /* FILTER CHIPS */
+    .filter-row { display:flex; gap:6px; overflow-x:auto; padding:7px 14px 4px; scrollbar-width:none; flex-shrink:0; }
+    .filter-row::-webkit-scrollbar { display:none; }
+    .fchip { font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; border:1px solid var(--border); background:var(--card); color:var(--text2); cursor:pointer; white-space:nowrap; transition:.15s; font-family:'JetBrains Mono',monospace; }
+    .fchip.on { background:var(--accent-glow); border-color:rgba(240,165,0,0.35); color:var(--accent); }
+    /* SAVED STATS */
+    .saved-stats { padding:5px 14px; font-size:10.5px; color:var(--text2); font-family:'JetBrains Mono',monospace; display:flex; align-items:center; gap:6px; }
+    .saved-count { color:var(--accent); font-weight:700; }
+    /* SAVED CARD extras */
+    .nc-saved-meta { display:flex; align-items:center; gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
+    .saved-date { font-size:10px; color:var(--text2); font-family:'JetBrains Mono',monospace; }
+    .unsave-btn { margin-left:auto; font-size:10.5px; color:var(--red); background:rgba(255,77,106,0.08); border:1px solid rgba(255,77,106,0.2); border-radius:5px; padding:3px 8px; cursor:pointer; font-weight:600; }
+    mark { background:rgba(240,165,0,0.28); color:var(--accent); border-radius:2px; padding:0 1px; }
   </style>
 </head>
 <body>
@@ -258,6 +372,9 @@
     <span id="cnt-sum">0 summaries</span>
   </div>
 
+  <!-- DEBUG LOG -->
+  <div id="dbg" style="display:none;padding:6px 14px;background:#0a0a18;border-bottom:1px solid var(--border);font-size:10px;font-family:monospace;color:var(--text2);max-height:80px;overflow-y:auto;flex-shrink:0;"></div>
+
   <!-- TABS -->
   <div class="tabs">
     <div class="tab on" data-t="all" onclick="switchTab('all')">All <span class="tbadge" id="b-all">0</span></div>
@@ -266,6 +383,7 @@
     <div class="tab" data-t="economy" onclick="switchTab('economy')">Economy <span class="tbadge" id="b-economy">0</span></div>
     <div class="tab" data-t="geo" onclick="switchTab('geo')">Geo <span class="tbadge" id="b-geo">0</span></div>
     <div class="tab" data-t="markets" onclick="switchTab('markets')">Markets <span class="tbadge" id="b-markets">0</span></div>
+    <div class="tab" data-t="saved" onclick="switchTab('saved')">💾 Saved <span class="tbadge" id="b-saved">0</span></div>
   </div>
 
   <!-- FEED -->
@@ -340,6 +458,8 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flexsearch/0.7.31/flexsearch.bundle.js"></script>
+
 <script>
 // ── CONSTANTS ──────────────────────────────────────────────────────
 
@@ -390,7 +510,6 @@ const CAT_KW = {
 // ── STATE ──────────────────────────────────────────────────────────
 
 let articles = [], summaries = {}, currentTab = 'all', seen = new Set();
-const dbgLog = (...args) => console.debug('[MC]', ...args);
 
 let P = {
   watchlist: [], sectors: [],
@@ -409,6 +528,7 @@ function init() {
   } catch(e){}
   renderSettings();
   renderFeed();
+  loadSaved();
   updateBadges();
   document.getElementById('cnt-items').textContent = articles.length + ' items';
   document.getElementById('cnt-sum').textContent = Object.keys(summaries).length + ' summaries';
@@ -419,18 +539,13 @@ function init() {
 async function fetchAllFeeds() {
   const btn = document.getElementById('btn-fetch');
   setLoad(btn, true);
+  const dbgEl = document.getElementById('dbg');
+  dbgEl.innerHTML = ''; dbgEl.style.display = 'none';
 
   const enabled = [];
   if(P.sources.et) enabled.push(...FEEDS.et);
   if(P.sources.bs) enabled.push(...FEEDS.bs);
   if(P.sources.bl) enabled.push(...FEEDS.bl);
-
-  if (!enabled.length) {
-    setStatus('err', 'Enable at least one source');
-    toast('Select one or more news sources in Settings');
-    setLoad(btn, false);
-    return;
-  }
 
   let fresh = [], failCount = 0, done = 0;
 
@@ -477,23 +592,10 @@ async function fetchAllFeeds() {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function fetchWithTimeout(url, ms=8000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(new Error('Timeout after ' + ms + 'ms')), ms);
-
-  try {
-    return await fetch(url, {
-      signal: controller.signal,
-      cache: 'no-store',
-      headers: { 'cache-control': 'no-store' }
-    });
-  } catch (e) {
-    if (e.name === 'AbortError') {
-      throw new Error('Timeout after ' + ms + 'ms');
-    }
-    throw e;
-  } finally {
-    clearTimeout(timer);
-  }
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Timeout after ' + ms + 'ms')), ms)
+  );
+  return Promise.race([fetch(url), timeout]);
 }
 
 async function fetchFeed(feed) {
@@ -694,7 +796,12 @@ function cardHtml(a) {
     ${a.desc?`<div class="nc-desc">${esc(a.desc)}</div>`:''}
     <div class="nc-foot">
       <span class="nc-sector">${tagline||'&nbsp;'}</span>
-      <button class="read-btn" onclick="event.stopPropagation();open_('${esc(a.url)}')">Read →</button>
+      <div style="display:flex;gap:5px;align-items:center;">
+        <button class="save-btn ${savedUrlSet.has(a.url)?'saved':''}" data-url="${esc(a.url)}"
+          onclick="event.stopPropagation();savedUrlSet.has('${esc(a.url)}')?unsaveArticle('${esc(a.url)}'):saveArticle('${esc(a.url)}')"
+        >${savedUrlSet.has(a.url)?'✓':'💾'}</button>
+        <button class="read-btn" onclick="event.stopPropagation();open_('${esc(a.url)}')">Read →</button>
+      </div>
     </div>
   </div>`;
 }
@@ -714,7 +821,8 @@ function updateBadges(){
 function switchTab(t){
   currentTab=t;
   document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('on',el.dataset.t===t));
-  renderFeed();
+  if(t==='saved') renderSavedTab();
+  else { searchQuery=''; searchFilter='all'; renderFeed(); }
 }
 
 // ── SETTINGS ──────────────────────────────────────────────────────
@@ -798,12 +906,233 @@ let _tt; function toast(msg){ const el=document.getElementById('toast'); el.text
 
 // ── START ─────────────────────────────────────────────────────────
 
-init();
-if('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(reg => {
-    reg.update().catch(() => {});
-  }).catch(() => {});
+
+// ═══════════════════════════════════════════════════════════════════
+// SAVE + SEARCH MODULE — IndexedDB + FlexSearch
+// ═══════════════════════════════════════════════════════════════════
+
+// ── IndexedDB wrapper ──────────────────────────────────────────────
+const DB_NAME = 'mc-saved', DB_VER = 1, STORE = 'articles';
+let _db = null;
+
+function openDB() {
+  if (_db) return Promise.resolve(_db);
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE)) {
+        const store = db.createObjectStore(STORE, { keyPath: 'url' });
+        store.createIndex('savedAt', 'savedAt');
+        store.createIndex('source', 'source');
+        store.createIndex('cats', 'cats', { multiEntry: true });
+      }
+    };
+    req.onsuccess = e => { _db = e.target.result; res(_db); };
+    req.onerror = () => rej(req.error);
+  });
 }
+
+async function dbGetAll() {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).index('savedAt').getAll();
+    req.onsuccess = () => res((req.result || []).reverse());
+    req.onerror = () => rej(req.error);
+  });
+}
+
+async function dbPut(article) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(article);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+
+async function dbDelete(url) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(url);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+
+// ── FlexSearch ─────────────────────────────────────────────────────
+let searchIndex = null;
+let savedArticles = [];
+const savedUrlSet = new Set();
+
+function buildSearchIndex(arts) {
+  if (typeof FlexSearch === 'undefined') return;
+  searchIndex = new FlexSearch.Document({
+    tokenize: 'forward', cache: 100,
+    document: {
+      id: 'url',
+      index: [
+        { field: 'title',   tokenize: 'forward', resolution: 9 },
+        { field: 'desc',    tokenize: 'forward', resolution: 5 },
+        { field: 'srcName', tokenize: 'strict',  resolution: 3 }
+      ]
+    }
+  });
+  arts.forEach(a => searchIndex.add(a));
+}
+
+async function loadSaved() {
+  try {
+    savedArticles = await dbGetAll();
+    savedUrlSet.clear();
+    savedArticles.forEach(a => savedUrlSet.add(a.url));
+    buildSearchIndex(savedArticles);
+    updateSavedBadge();
+  } catch(e) { console.warn('loadSaved:', e); }
+}
+
+// ── Save / Unsave ──────────────────────────────────────────────────
+async function saveArticle(url) {
+  const article = articles.find(a => a.url === url);
+  if (!article) return;
+  await dbPut({ ...article, savedAt: Date.now() });
+  savedUrlSet.add(url);
+  await loadSaved();
+  toast('💾 Saved');
+  // Update button in current feed without full re-render
+  document.querySelectorAll(\`.save-btn[data-url]\`).forEach(btn => {
+    if (btn.dataset.url === url) { btn.textContent = '✓'; btn.classList.add('saved'); }
+  });
+}
+
+async function unsaveArticle(url) {
+  await dbDelete(url);
+  savedUrlSet.delete(url);
+  await loadSaved();
+  toast('🗑️ Removed');
+  if (currentTab === 'saved') renderSavedTab();
+}
+
+function updateSavedBadge() {
+  const el = document.getElementById('b-saved');
+  if (el) el.textContent = savedArticles.length;
+}
+
+// ── Search state ───────────────────────────────────────────────────
+let searchQuery = '';
+let searchFilter = 'all';
+
+function getFilteredSaved() {
+  let results = savedArticles;
+  if (searchFilter !== 'all') {
+    results = results.filter(a =>
+      a.source === searchFilter ||
+      (a.cats && a.cats.includes(searchFilter))
+    );
+  }
+  if (searchQuery.trim().length >= 2 && searchIndex) {
+    const hits = searchIndex.search(searchQuery, { limit: 200 });
+    const matchedUrls = new Set();
+    hits.forEach(h => (h.result || h).forEach(url => matchedUrls.add(url)));
+    results = results.filter(a => matchedUrls.has(a.url));
+  }
+  return results;
+}
+
+function highlightText(text, query) {
+  if (!query || query.trim().length < 2) return esc(text);
+  const safe = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return esc(text).replace(new RegExp('(' + safe + ')', 'gi'), '<mark>$1</mark>');
+}
+
+// ── Render Saved Tab ───────────────────────────────────────────────
+function renderSavedTab() {
+  const feed = document.getElementById('feed');
+  const sources = [...new Set(savedArticles.map(a => a.source))].filter(Boolean);
+  const cats = [...new Set(savedArticles.flatMap(a => a.cats || []).filter(c => c !== 'general'))];
+  const filterOptions = [
+    { key: 'all', label: 'All' },
+    ...sources.map(s => ({ key: s, label: s.toUpperCase() })),
+    ...cats.map(c => ({ key: c, label: c.charAt(0).toUpperCase() + c.slice(1) }))
+  ];
+  const results = getFilteredSaved();
+
+  let html = \`<div style="display:flex;flex-direction:column;">
+    <div class="search-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="search" id="search-inp" placeholder="Search saved articles…"
+          value="\${esc(searchQuery)}"
+          oninput="onSearchInput(this.value)"
+          autocomplete="off" autocorrect="off" spellcheck="false">
+        <span class="search-clear \${searchQuery ? 'show' : ''}" onclick="clearSearch()">✕</span>
+      </div>
+    </div>
+    <div class="filter-row">
+      \${filterOptions.map(f => \`<div class="fchip \${searchFilter === f.key ? 'on' : ''}" onclick="setSearchFilter('\${f.key}')">\${f.label}</div>\`).join('')}
+    </div>
+    <div class="saved-stats">
+      <span class="saved-count">\${results.length}</span>
+      <span>of \${savedArticles.length} saved\${searchQuery ? ' · "' + esc(searchQuery) + '"' : ''}</span>
+    </div>\`;
+
+  if (!savedArticles.length) {
+    html += \`<div class="empty">
+      <div class="empty-icon">💾</div>
+      <div class="empty-h">No saved articles yet</div>
+      <div class="empty-p">Tap <strong>Save</strong> on any article to archive it here.</div>
+    </div>\`;
+  } else if (!results.length) {
+    html += \`<div class="empty">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-h">No results</div>
+      <div class="empty-p">Try a different search term or clear the filter.</div>
+    </div>\`;
+  } else {
+    html += results.map(a => savedCardHtml(a)).join('');
+  }
+
+  html += '</div>';
+  feed.innerHTML = html;
+}
+
+function savedCardHtml(a) {
+  const t = new Date(a.pub).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const savedDate = new Date(a.savedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'});
+  const cats = (a.cats || []).filter(c => c !== 'general');
+  const catBadges = cats.slice(0,2).map(c=>\`<span class="cbadge c-\${c}">\${c}</span>\`).join('');
+  const tagline = [...(a.wl||[]),...(a.sectors||[])].slice(0,2).join(', ');
+  return \`<div class="nc" onclick="open_('\${esc(a.url)}')">
+    <div class="nc-meta">
+      <span class="sbadge s-\${a.source}">\${a.source.toUpperCase()}</span>
+      \${catBadges}
+      <span class="nc-time">\${t}</span>
+    </div>
+    <div class="nc-title">\${highlightText(a.title, searchQuery)}</div>
+    \${a.desc ? \`<div class="nc-desc">\${highlightText(a.desc.slice(0,140), searchQuery)}</div>\` : ''}
+    <div class="nc-saved-meta">
+      <span class="saved-date">💾 \${savedDate}</span>
+      \${tagline ? \`<span class="nc-sector" style="margin-left:6px;">\${tagline}</span>\` : ''}
+      <button class="unsave-btn" onclick="event.stopPropagation();unsaveArticle('\${esc(a.url)}')">Remove</button>
+    </div>
+  </div>\`;
+}
+
+// ── Search handlers ────────────────────────────────────────────────
+let _searchTimer = null;
+function onSearchInput(val) {
+  searchQuery = val;
+  const cb = document.querySelector('.search-clear');
+  if (cb) cb.classList.toggle('show', val.length > 0);
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(() => renderSavedTab(), 200);
+}
+function clearSearch() { searchQuery = ''; renderSavedTab(); }
+function setSearchFilter(key) { searchFilter = key; renderSavedTab(); }
+
+init();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
